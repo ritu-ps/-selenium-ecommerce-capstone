@@ -1,4 +1,3 @@
-```python
 import json
 import os
 import time
@@ -38,15 +37,19 @@ def take_screenshot(driver, name):
 def click_when_ready(driver, locator):
     """Wait until an element is clickable and click it."""
     wait = WebDriverWait(driver, WAIT)
-    element = wait.until(EC.element_to_be_clickable(locator))
+    element = wait.until(
+        EC.element_to_be_clickable(locator)
+    )
     element.click()
     return element
 
 
 def visible_element(driver, locator):
-    """Wait for an element to become visible."""
+    """Wait until an element is visible."""
     wait = WebDriverWait(driver, WAIT)
-    return wait.until(EC.visibility_of_element_located(locator))
+    return wait.until(
+        EC.visibility_of_element_located(locator)
+    )
 
 
 @pytest.mark.usefixtures("driver")
@@ -54,17 +57,18 @@ class TestEcommerceCapstone:
 
     def test_complete_ecommerce_flow(self):
         """
-        Assignment 1 complete flow:
+        Complete e-commerce automation flow:
 
-        1. Launch browser
-        2. Register and login
-        3. Search product
-        4. Add product to cart
-        5. Update quantity
+        1. Launch website
+        2. Register a new user
+        3. Verify login
+        4. Search for a product
+        5. Add product to cart
         6. Verify cart
-        7. Take screenshots
-        8. Read test data from JSON
-        9. Handle popup/alerts
+        7. Update quantity
+        8. Verify price and total
+        9. Take screenshots
+        10. Logout
         """
 
         driver = self.driver
@@ -86,17 +90,20 @@ class TestEcommerceCapstone:
             data.get("cart", {}).get("quantity", 2)
         )
 
-        search_keyword = (
-            data.get("search", {}).get("keyword", "top")
+        search_keyword = data.get(
+            "search", {}
+        ).get(
+            "keyword", "top"
         )
 
-        # Generate a unique email for every execution
+        # Generate a unique email for every run
         email = (
-            f"seleniumtest{int(time.time())}@example.com"
+            f"seleniumtest{int(time.time())}"
+            "@example.com"
         )
 
         # ---------------------------------------------------------
-        # 1. LAUNCH BROWSER
+        # 1. OPEN WEBSITE
         # ---------------------------------------------------------
 
         driver.get(BASE_URL)
@@ -107,51 +114,69 @@ class TestEcommerceCapstone:
 
         assert "Automation Exercise" in driver.title
 
-        take_screenshot(driver, "01_home_page")
+        take_screenshot(
+            driver,
+            "01_home_page"
+        )
 
         # ---------------------------------------------------------
-        # 2. REGISTER / LOGIN
+        # 2. REGISTER
         # ---------------------------------------------------------
 
-        # AutomationExercise officially uses "Signup / Login"
-        # for the authentication flow.
         click_when_ready(
             driver,
             (By.CSS_SELECTOR, "a[href='/login']")
         )
 
-        # Verify login/signup page
         visible_element(
             driver,
-            (By.XPATH, "//h2[contains(text(),'New User Signup')]")
+            (
+                By.XPATH,
+                "//h2[contains(text(),'New User Signup')]"
+            )
         )
 
-        # Register a new user
+        # Name
         visible_element(
             driver,
-            (By.CSS_SELECTOR, "input[data-qa='signup-name']")
+            (
+                By.CSS_SELECTOR,
+                "input[data-qa='signup-name']"
+            )
         ).send_keys(first_name)
 
+        # Email
         driver.find_element(
             By.CSS_SELECTOR,
             "input[data-qa='signup-email']"
         ).send_keys(email)
 
+        # Signup
         click_when_ready(
             driver,
-            (By.CSS_SELECTOR, "button[data-qa='signup-button']")
+            (
+                By.CSS_SELECTOR,
+                "button[data-qa='signup-button']"
+            )
         )
 
-        # Account information page
+        # ---------------------------------------------------------
+        # 3. ACCOUNT INFORMATION
+        # ---------------------------------------------------------
+
         visible_element(
             driver,
-            (By.XPATH, "//b[contains(text(),'Enter Account Information')]")
+            (
+                By.XPATH,
+                "//b[contains(text(),'Enter Account Information')]"
+            )
         )
 
-        # Title
+        # Gender
         try:
             driver.find_element(
-                By.ID, "id_gender1"
+                By.ID,
+                "id_gender1"
             ).click()
         except Exception:
             pass
@@ -165,28 +190,42 @@ class TestEcommerceCapstone:
         # Date of birth
         try:
             Select(
-                driver.find_element(By.CSS_SELECTOR, "#days")
+                driver.find_element(
+                    By.CSS_SELECTOR,
+                    "#days"
+                )
             ).select_by_value("10")
 
             Select(
-                driver.find_element(By.CSS_SELECTOR, "#months")
+                driver.find_element(
+                    By.CSS_SELECTOR,
+                    "#months"
+                )
             ).select_by_value("5")
 
             Select(
-                driver.find_element(By.CSS_SELECTOR, "#years")
+                driver.find_element(
+                    By.CSS_SELECTOR,
+                    "#years"
+                )
             ).select_by_value("2004")
+
         except Exception:
             pass
 
         # Newsletter
         try:
             driver.find_element(
-                By.ID, "newsletter"
+                By.ID,
+                "newsletter"
             ).click()
         except Exception:
             pass
 
-        # Address information
+        # ---------------------------------------------------------
+        # 4. ADDRESS INFORMATION
+        # ---------------------------------------------------------
+
         driver.find_element(
             By.CSS_SELECTOR,
             "input[data-qa='first_name']"
@@ -236,50 +275,80 @@ class TestEcommerceCapstone:
         # Create account
         click_when_ready(
             driver,
-            (By.CSS_SELECTOR, "button[data-qa='create-account']")
+            (
+                By.CSS_SELECTOR,
+                "button[data-qa='create-account']"
+            )
         )
 
-        # Verify account creation
+        # Verify account created
         visible_element(
             driver,
-            (By.XPATH, "//b[contains(text(),'Account Created')]")
+            (
+                By.XPATH,
+                "//b[contains(text(),'Account Created')]"
+            )
         )
 
-        take_screenshot(driver, "02_account_created")
+        take_screenshot(
+            driver,
+            "02_account_created"
+        )
 
         # Continue
         click_when_ready(
             driver,
-            (By.CSS_SELECTOR, "a[data-qa='continue-button']")
+            (
+                By.CSS_SELECTOR,
+                "a[data-qa='continue-button']"
+            )
         )
 
-        # Verify logged-in state
+        # ---------------------------------------------------------
+        # 5. VERIFY LOGIN
+        # ---------------------------------------------------------
+
         logged_in_text = visible_element(
             driver,
-            (By.XPATH, "//a[contains(text(),'Logged in as')]")
+            (
+                By.XPATH,
+                "//a[contains(text(),'Logged in as')]"
+            )
         )
 
         assert "Logged in as" in logged_in_text.text
 
-        take_screenshot(driver, "03_login_success")
+        take_screenshot(
+            driver,
+            "03_login_success"
+        )
 
         # ---------------------------------------------------------
-        # 3. SEARCH PRODUCT
+        # 6. SEARCH PRODUCT
         # ---------------------------------------------------------
 
         click_when_ready(
             driver,
-            (By.CSS_SELECTOR, "a[href='/products']")
+            (
+                By.CSS_SELECTOR,
+                "a[href='/products']"
+            )
         )
 
         visible_element(
             driver,
-            (By.XPATH, "//h2[contains(text(),'All Products')]")
+            (
+                By.XPATH,
+                "//h2[contains(text(),'All Products')]"
+            )
         )
 
         search_box = visible_element(
             driver,
-            (By.ID, "search_product")
+            (
+                By.ID,
+                "search_product"
+            )
         )
 
         search_box.clear()
@@ -287,13 +356,19 @@ class TestEcommerceCapstone:
 
         click_when_ready(
             driver,
-            (By.ID, "submit_search")
+            (
+                By.ID,
+                "submit_search"
+            )
         )
 
-        # Verify searched products
+        # Verify search results
         visible_element(
             driver,
-            (By.XPATH, "//h2[contains(text(),'Searched Products')]")
+            (
+                By.XPATH,
+                "//h2[contains(text(),'Searched Products')]"
+            )
         )
 
         products = driver.find_elements(
@@ -305,13 +380,15 @@ class TestEcommerceCapstone:
             f"No products found for '{search_keyword}'"
         )
 
-        take_screenshot(driver, "04_search_results")
+        take_screenshot(
+            driver,
+            "04_search_results"
+        )
 
         # ---------------------------------------------------------
-        # 4. ADD PRODUCT TO CART
+        # 7. ADD PRODUCT TO CART
         # ---------------------------------------------------------
 
-        # Add the first product from the search results.
         first_product = products[0]
 
         add_button = first_product.find_element(
@@ -324,27 +401,39 @@ class TestEcommerceCapstone:
             add_button
         )
 
-        # Wait for cart confirmation modal
+        # Wait for confirmation
         visible_element(
             driver,
-            (By.XPATH, "//p[contains(text(),'Your product has been added')]")
+            (
+                By.XPATH,
+                "//p[contains(text(),'Your product has been added')]"
+            )
         )
 
-        take_screenshot(driver, "05_product_added")
+        take_screenshot(
+            driver,
+            "05_product_added"
+        )
 
-        # Click View Cart
+        # Open cart
         click_when_ready(
             driver,
-            (By.XPATH, "//u[contains(text(),'View Cart')]")
+            (
+                By.XPATH,
+                "//u[contains(text(),'View Cart')]"
+            )
         )
 
         # ---------------------------------------------------------
-        # 5. VERIFY CART
+        # 8. VERIFY CART
         # ---------------------------------------------------------
 
         visible_element(
             driver,
-            (By.XPATH, "//li[contains(@class,'active')]")
+            (
+                By.ID,
+                "cart_info_table"
+            )
         )
 
         cart_rows = driver.find_elements(
@@ -356,42 +445,63 @@ class TestEcommerceCapstone:
             "Product was not found in the cart"
         )
 
-        take_screenshot(driver, "06_cart")
+        take_screenshot(
+            driver,
+            "06_cart"
+        )
 
         # ---------------------------------------------------------
-        # 6. UPDATE QUANTITY
+        # 9. UPDATE QUANTITY
         # ---------------------------------------------------------
 
         quantity_input = visible_element(
             driver,
-            (By.CSS_SELECTOR, "input.cart_quantity_input")
+            (
+                By.CSS_SELECTOR,
+                "input.cart_quantity_input"
+            )
         )
 
         quantity_input.clear()
         quantity_input.send_keys(str(quantity))
 
-        # Quantity is updated automatically on AutomationExercise
-        # after changing the input.
+        # Trigger change event
+        driver.execute_script(
+            """
+            arguments[0].dispatchEvent(
+                new Event('change', { bubbles: true })
+            );
+            """,
+            quantity_input
+        )
 
-        # Wait until the input contains the expected quantity
+        # Wait for expected value
         wait.until(
             EC.text_to_be_present_in_element_value(
-                (By.CSS_SELECTOR, "input.cart_quantity_input"),
+                (
+                    By.CSS_SELECTOR,
+                    "input.cart_quantity_input"
+                ),
                 str(quantity)
             )
         )
 
-        updated_quantity = quantity_input.get_attribute("value")
+        updated_quantity = quantity_input.get_attribute(
+            "value"
+        )
 
         assert updated_quantity == str(quantity), (
             f"Expected quantity {quantity}, "
             f"but found {updated_quantity}"
         )
 
-        take_screenshot(driver, "07_quantity_updated")
+        take_screenshot(
+            driver,
+            "07_quantity_updated"
+        )
 
         # ---------------------------------------------------------
-        # 7. VERIFY PRICE / TOTAL
+        # 10. VERIFY PRICE AND TOTAL
         # ---------------------------------------------------------
 
         price_elements = driver.find_elements(
@@ -412,37 +522,53 @@ class TestEcommerceCapstone:
             "Product total was not displayed"
         )
 
-        print("\n========== CART DETAILS ==========")
-        print(f"Product quantity : {updated_quantity}")
-        print(f"Product price    : {price_elements[0].text}")
-        print(f"Product total    : {total_elements[0].text}")
-        print("==================================")
+        print(
+            "\n========== CART DETAILS =========="
+        )
+        print(
+            f"Product quantity : {updated_quantity}"
+        )
+        print(
+            f"Product price    : {price_elements[0].text}"
+        )
+        print(
+            f"Product total    : {total_elements[0].text}"
+        )
+        print(
+            "=================================="
+        )
 
-        take_screenshot(driver, "08_cart_verified")
+        take_screenshot(
+            driver,
+            "08_cart_verified"
+        )
 
         # ---------------------------------------------------------
-        # 8. LOGOUT
+        # 11. LOGOUT
         # ---------------------------------------------------------
 
         click_when_ready(
             driver,
-            (By.CSS_SELECTOR, "a[href='/logout']")
+            (
+                By.CSS_SELECTOR,
+                "a[href='/logout']"
+            )
         )
 
-        # Verify logout
         wait.until(
             EC.url_contains("/login")
         )
 
         assert "/login" in driver.current_url
 
-        take_screenshot(driver, "09_logout")
-
+        take_screenshot(
+            driver,
+            "09_logout"
+        )
 
     def test_price_in_rupees(self):
         """
-        Independent simple test demonstrating currency calculation.
-        This test does not depend on the shopping-flow test.
+        Independent currency conversion test.
         """
 
         usd_to_inr = 88.0
@@ -454,11 +580,18 @@ class TestEcommerceCapstone:
         usd_inr = usd_amount * usd_to_inr
         eur_inr = eur_amount * eur_to_inr
 
-        print("\n========== CURRENCY CONVERSION ==========")
-        print(f"$100 USD = Rs.{usd_inr:.2f}")
-        print(f"€100 EUR = Rs.{eur_inr:.2f}")
-        print("=========================================")
+        print(
+            "\n========== CURRENCY CONVERSION =========="
+        )
+        print(
+            f"$100 USD = Rs.{usd_inr:.2f}"
+        )
+        print(
+            f"€100 EUR = Rs.{eur_inr:.2f}"
+        )
+        print(
+            "========================================="
+        )
 
         assert usd_inr > 0
         assert eur_inr > 0
-```
