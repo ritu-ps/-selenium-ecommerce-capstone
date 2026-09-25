@@ -4,25 +4,51 @@ import time
 
 import pytest
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
 WAIT = 20
-BASE_URL = "https://automationexercise.com"
+DEFAULT_URL = "https://demo.nopcommerce.com/"
 
 
 def load_test_data():
-    """Read test data from test_data.json."""
-    path = os.path.join(os.path.dirname(__file__), "test_data.json")
+    """Load test data from test_data.json."""
+    path = os.path.join(
+        os.path.dirname(__file__),
+        "test_data.json"
+    )
 
     with open(path, "r", encoding="utf-8") as file:
         return json.load(file)
 
 
-def take_screenshot(driver, name):
-    """Save a screenshot in the screenshots folder."""
-    folder = os.path.join(os.path.dirname(__file__), "screenshots")
+def wait_for(driver, locator):
+    """Wait until an element is visible."""
+    return WebDriverWait(driver, WAIT).until(
+        EC.visibility_of_element_located(locator)
+    )
+
+
+def click_when_ready(driver, locator):
+    """Wait until an element is clickable and click it."""
+    element = WebDriverWait(driver, WAIT).until(
+        EC.element_to_be_clickable(locator)
+    )
+    driver.execute_script(
+        "arguments[0].click();",
+        element
+    )
+    return element
+
+
+def save_screenshot(driver, name):
+    """Save a screenshot to the screenshots directory."""
+    folder = os.path.join(
+        os.path.dirname(__file__),
+        "screenshots"
+    )
+
     os.makedirs(folder, exist_ok=True)
 
     filename = os.path.join(
@@ -31,25 +57,8 @@ def take_screenshot(driver, name):
     )
 
     driver.save_screenshot(filename)
+
     print(f"\nScreenshot saved: {filename}")
-
-
-def click_when_ready(driver, locator):
-    """Wait until an element is clickable and click it."""
-    wait = WebDriverWait(driver, WAIT)
-    element = wait.until(
-        EC.element_to_be_clickable(locator)
-    )
-    element.click()
-    return element
-
-
-def visible_element(driver, locator):
-    """Wait until an element is visible."""
-    wait = WebDriverWait(driver, WAIT)
-    return wait.until(
-        EC.visibility_of_element_located(locator)
-    )
 
 
 @pytest.mark.usefixtures("driver")
@@ -57,495 +66,506 @@ class TestEcommerceCapstone:
 
     def test_complete_ecommerce_flow(self):
         """
-        Complete e-commerce automation flow:
+        Complete nopCommerce automation flow:
 
-        1. Launch website
-        2. Register a new user
-        3. Verify login
-        4. Search for a product
-        5. Add product to cart
-        6. Verify cart
-        7. Update quantity
-        8. Verify price and total
-        9. Take screenshots
+        1. Open nopCommerce
+        2. Register a new customer
+        3. Verify account creation
+        4. Search for a laptop
+        5. Open a search result
+        6. Add product to cart
+        7. Verify cart
+        8. Update quantity
+        9. Verify price and total
         10. Logout
         """
 
         driver = self.driver
-        wait = WebDriverWait(driver, WAIT)
-
-        # ---------------------------------------------------------
-        # READ TEST DATA
-        # ---------------------------------------------------------
-
         data = load_test_data()
 
-        user_data = data.get("user", {})
+        base_url = data.get(
+            "base_url",
+            DEFAULT_URL
+        )
 
-        first_name = user_data.get("first_name", "Ritu")
-        last_name = user_data.get("last_name", "Test")
-        password = user_data.get("password", "Test@12345")
+        user = data.get("user", {})
+
+        first_name = user.get(
+            "first_name",
+            "Ritu"
+        )
+
+        last_name = user.get(
+            "last_name",
+            "Automation"
+        )
+
+        password = user.get(
+            "password",
+            "Test@12345"
+        )
+
+        keyword = data.get(
+            "search",
+            {}
+        ).get(
+            "keyword",
+            "laptop"
+        )
 
         quantity = int(
-            data.get("cart", {}).get("quantity", 2)
+            data.get(
+                "cart",
+                {}
+            ).get(
+                "quantity",
+                2
+            )
         )
 
-        search_keyword = data.get(
-            "search", {}
-        ).get(
-            "keyword", "top"
-        )
-
-        # Generate a unique email for every run
+        # Generate a unique email for every GitHub Actions run.
         email = (
-            f"seleniumtest{int(time.time())}"
+            f"ritutest{int(time.time())}"
             "@example.com"
         )
 
-        # ---------------------------------------------------------
-        # 1. OPEN WEBSITE
-        # ---------------------------------------------------------
+        # =========================================================
+        # 1. OPEN NOPCOMMERCE
+        # =========================================================
 
-        driver.get(BASE_URL)
+        driver.get(base_url)
 
-        wait.until(
-            EC.title_contains("Automation Exercise")
+        WebDriverWait(driver, WAIT).until(
+            EC.title_contains("nopCommerce")
         )
 
-        assert "Automation Exercise" in driver.title
+        assert "nopCommerce" in driver.title
 
-        take_screenshot(
+        save_screenshot(
             driver,
             "01_home_page"
         )
 
-        # ---------------------------------------------------------
-        # 2. REGISTER
-        # ---------------------------------------------------------
+        # =========================================================
+        # 2. OPEN REGISTRATION
+        # =========================================================
 
-        click_when_ready(
-            driver,
-            (By.CSS_SELECTOR, "a[href='/login']")
-        )
-
-        visible_element(
-            driver,
-            (
-                By.XPATH,
-                "//h2[contains(text(),'New User Signup')]"
-            )
-        )
-
-        # Name
-        visible_element(
-            driver,
-            (
-                By.CSS_SELECTOR,
-                "input[data-qa='signup-name']"
-            )
-        ).send_keys(first_name)
-
-        # Email
-        driver.find_element(
-            By.CSS_SELECTOR,
-            "input[data-qa='signup-email']"
-        ).send_keys(email)
-
-        # Signup
         click_when_ready(
             driver,
             (
                 By.CSS_SELECTOR,
-                "button[data-qa='signup-button']"
+                "a[href='/register']"
             )
         )
 
-        # ---------------------------------------------------------
-        # 3. ACCOUNT INFORMATION
-        # ---------------------------------------------------------
-
-        visible_element(
+        wait_for(
             driver,
             (
-                By.XPATH,
-                "//b[contains(text(),'Enter Account Information')]"
+                By.CSS_SELECTOR,
+                "input[name='FirstName']"
             )
         )
 
-        # Gender
-        try:
-            driver.find_element(
-                By.ID,
-                "id_gender1"
-            ).click()
-        except Exception:
-            pass
-
-        # Password
-        driver.find_element(
-            By.CSS_SELECTOR,
-            "input[data-qa='password']"
-        ).send_keys(password)
-
-        # Date of birth
-        try:
-            Select(
-                driver.find_element(
-                    By.CSS_SELECTOR,
-                    "#days"
-                )
-            ).select_by_value("10")
-
-            Select(
-                driver.find_element(
-                    By.CSS_SELECTOR,
-                    "#months"
-                )
-            ).select_by_value("5")
-
-            Select(
-                driver.find_element(
-                    By.CSS_SELECTOR,
-                    "#years"
-                )
-            ).select_by_value("2004")
-
-        except Exception:
-            pass
-
-        # Newsletter
-        try:
-            driver.find_element(
-                By.ID,
-                "newsletter"
-            ).click()
-        except Exception:
-            pass
-
-        # ---------------------------------------------------------
-        # 4. ADDRESS INFORMATION
-        # ---------------------------------------------------------
+        # =========================================================
+        # 3. FILL REGISTRATION FORM
+        # =========================================================
 
         driver.find_element(
             By.CSS_SELECTOR,
-            "input[data-qa='first_name']"
+            "input[name='FirstName']"
         ).send_keys(first_name)
 
         driver.find_element(
             By.CSS_SELECTOR,
-            "input[data-qa='last_name']"
+            "input[name='LastName']"
         ).send_keys(last_name)
 
         driver.find_element(
             By.CSS_SELECTOR,
-            "input[data-qa='address']"
-        ).send_keys("Test Address")
+            "input[name='Email']"
+        ).send_keys(email)
 
-        # Country
-        try:
-            Select(
-                driver.find_element(
+        driver.find_element(
+            By.CSS_SELECTOR,
+            "input[name='Password']"
+        ).send_keys(password)
+
+        driver.find_element(
+            By.CSS_SELECTOR,
+            "input[name='ConfirmPassword']"
+        ).send_keys(password)
+
+        save_screenshot(
+            driver,
+            "02_registration_form"
+        )
+
+        # =========================================================
+        # 4. CREATE ACCOUNT
+        # =========================================================
+
+        click_when_ready(
+            driver,
+            (
+                By.CSS_SELECTOR,
+                "button[name='register-button']"
+            )
+        )
+
+        wait_for(
+            driver,
+            (
+                By.CSS_SELECTOR,
+                ".result"
+            )
+        )
+
+        registration_result = driver.find_element(
+            By.CSS_SELECTOR,
+            ".result"
+        )
+
+        assert "completed" in (
+            registration_result.text.lower()
+        )
+
+        save_screenshot(
+            driver,
+            "03_account_created"
+        )
+
+        # Continue back to store.
+        continue_buttons = driver.find_elements(
+            By.CSS_SELECTOR,
+            "a.register-continue-button"
+        )
+
+        if continue_buttons:
+            click_when_ready(
+                driver,
+                (
                     By.CSS_SELECTOR,
-                    "select[data-qa='country']"
+                    "a.register-continue-button"
                 )
-            ).select_by_visible_text("India")
-        except Exception:
-            pass
-
-        driver.find_element(
-            By.CSS_SELECTOR,
-            "input[data-qa='state']"
-        ).send_keys("West Bengal")
-
-        driver.find_element(
-            By.CSS_SELECTOR,
-            "input[data-qa='city']"
-        ).send_keys("Kolkata")
-
-        driver.find_element(
-            By.CSS_SELECTOR,
-            "input[data-qa='zipcode']"
-        ).send_keys("700001")
-
-        driver.find_element(
-            By.CSS_SELECTOR,
-            "input[data-qa='mobile_number']"
-        ).send_keys("9000000000")
-
-        # Create account
-        click_when_ready(
-            driver,
-            (
-                By.CSS_SELECTOR,
-                "button[data-qa='create-account']"
             )
-        )
+        else:
+            driver.get(base_url)
 
-        # Verify account created
-        visible_element(
-            driver,
-            (
-                By.XPATH,
-                "//b[contains(text(),'Account Created')]"
-            )
-        )
-
-        take_screenshot(
-            driver,
-            "02_account_created"
-        )
-
-        # Continue
-        click_when_ready(
-            driver,
-            (
-                By.CSS_SELECTOR,
-                "a[data-qa='continue-button']"
-            )
-        )
-
-        # ---------------------------------------------------------
-        # 5. VERIFY LOGIN
-        # ---------------------------------------------------------
-
-        logged_in_text = visible_element(
-            driver,
-            (
-                By.XPATH,
-                "//a[contains(text(),'Logged in as')]"
-            )
-        )
-
-        assert "Logged in as" in logged_in_text.text
-
-        take_screenshot(
-            driver,
-            "03_login_success"
-        )
-
-        # ---------------------------------------------------------
-        # 6. SEARCH PRODUCT
-        # ---------------------------------------------------------
+        # =========================================================
+        # 5. LOGIN
+        # =========================================================
 
         click_when_ready(
             driver,
             (
                 By.CSS_SELECTOR,
-                "a[href='/products']"
+                "a[href='/login']"
             )
         )
 
-        visible_element(
+        wait_for(
             driver,
             (
-                By.XPATH,
-                "//h2[contains(text(),'All Products')]"
+                By.CSS_SELECTOR,
+                "input[name='Email']"
             )
         )
 
-        search_box = visible_element(
+        driver.find_element(
+            By.CSS_SELECTOR,
+            "input[name='Email']"
+        ).send_keys(email)
+
+        driver.find_element(
+            By.CSS_SELECTOR,
+            "input[name='Password']"
+        ).send_keys(password)
+
+        click_when_ready(
             driver,
             (
-                By.ID,
-                "search_product"
+                By.CSS_SELECTOR,
+                "button.login-button"
+            )
+        )
+
+        # Verify logout link exists after login.
+        wait_for(
+            driver,
+            (
+                By.CSS_SELECTOR,
+                "a[href='/logout']"
+            )
+        )
+
+        save_screenshot(
+            driver,
+            "04_login_success"
+        )
+
+        # =========================================================
+        # 6. SEARCH FOR LAPTOP
+        # =========================================================
+
+        search_box = wait_for(
+            driver,
+            (
+                By.CSS_SELECTOR,
+                "#small-searchterms"
             )
         )
 
         search_box.clear()
-        search_box.send_keys(search_keyword)
+        search_box.send_keys(keyword)
 
         click_when_ready(
             driver,
             (
-                By.ID,
-                "submit_search"
+                By.CSS_SELECTOR,
+                "button.search-box-button"
             )
         )
 
-        # Verify search results
-        visible_element(
+        # Wait for search page.
+        WebDriverWait(driver, WAIT).until(
+            EC.url_contains("/search")
+        )
+
+        wait_for(
             driver,
             (
-                By.XPATH,
-                "//h2[contains(text(),'Searched Products')]"
+                By.CSS_SELECTOR,
+                ".product-item"
             )
         )
 
         products = driver.find_elements(
             By.CSS_SELECTOR,
-            ".productinfo"
+            ".product-item"
         )
 
         assert len(products) > 0, (
-            f"No products found for '{search_keyword}'"
+            f"No products found for '{keyword}'"
         )
 
-        take_screenshot(
+        print(
+            f"\nFound {len(products)} product(s) "
+            f"for '{keyword}'"
+        )
+
+        save_screenshot(
             driver,
-            "04_search_results"
+            "05_search_results"
         )
 
-        # ---------------------------------------------------------
-        # 7. ADD PRODUCT TO CART
-        # ---------------------------------------------------------
+        # =========================================================
+        # 7. OPEN FIRST PRODUCT
+        # =========================================================
 
         first_product = products[0]
 
-        add_button = first_product.find_element(
+        product_link = first_product.find_element(
             By.CSS_SELECTOR,
-            "a.add-to-cart"
+            "h2.product-title a"
         )
+
+        product_name = product_link.text.strip()
 
         driver.execute_script(
             "arguments[0].click();",
-            add_button
+            product_link
         )
 
-        # Wait for confirmation
-        visible_element(
-            driver,
-            (
-                By.XPATH,
-                "//p[contains(text(),'Your product has been added')]"
-            )
-        )
-
-        take_screenshot(
-            driver,
-            "05_product_added"
-        )
-
-        # Open cart
-        click_when_ready(
-            driver,
-            (
-                By.XPATH,
-                "//u[contains(text(),'View Cart')]"
-            )
-        )
-
-        # ---------------------------------------------------------
-        # 8. VERIFY CART
-        # ---------------------------------------------------------
-
-        visible_element(
-            driver,
-            (
-                By.ID,
-                "cart_info_table"
-            )
-        )
-
-        cart_rows = driver.find_elements(
-            By.CSS_SELECTOR,
-            "#cart_info_table tbody tr"
-        )
-
-        assert len(cart_rows) >= 1, (
-            "Product was not found in the cart"
-        )
-
-        take_screenshot(
-            driver,
-            "06_cart"
-        )
-
-        # ---------------------------------------------------------
-        # 9. UPDATE QUANTITY
-        # ---------------------------------------------------------
-
-        quantity_input = visible_element(
+        wait_for(
             driver,
             (
                 By.CSS_SELECTOR,
-                "input.cart_quantity_input"
+                "button.add-to-cart-button"
+            )
+        )
+
+        print(
+            f"Selected product: {product_name}"
+        )
+
+        save_screenshot(
+            driver,
+            "06_product_page"
+        )
+
+        # =========================================================
+        # 8. ADD PRODUCT TO CART
+        # =========================================================
+
+        click_when_ready(
+            driver,
+            (
+                By.CSS_SELECTOR,
+                "button.add-to-cart-button"
+            )
+        )
+
+        # Wait for cart notification / success message.
+        WebDriverWait(driver, WAIT).until(
+            lambda d: (
+                "added to your shopping cart"
+                in d.page_source.lower()
+                or "shopping cart"
+                in d.page_source.lower()
+            )
+        )
+
+        save_screenshot(
+            driver,
+            "07_product_added"
+        )
+
+        # =========================================================
+        # 9. OPEN SHOPPING CART
+        # =========================================================
+
+        click_when_ready(
+            driver,
+            (
+                By.CSS_SELECTOR,
+                "a.ico-cart"
+            )
+        )
+
+        WebDriverWait(driver, WAIT).until(
+            EC.url_contains("/cart")
+        )
+
+        wait_for(
+            driver,
+            (
+                By.CSS_SELECTOR,
+                ".cart-item-row"
+            )
+        )
+
+        cart_items = driver.find_elements(
+            By.CSS_SELECTOR,
+            ".cart-item-row"
+        )
+
+        assert len(cart_items) > 0, (
+            "Product was not added to the cart"
+        )
+
+        save_screenshot(
+            driver,
+            "08_cart"
+        )
+
+        # =========================================================
+        # 10. UPDATE QUANTITY
+        # =========================================================
+
+        quantity_input = wait_for(
+            driver,
+            (
+                By.CSS_SELECTOR,
+                ".qty-input"
             )
         )
 
         quantity_input.clear()
         quantity_input.send_keys(str(quantity))
 
-        # Trigger change event
-        driver.execute_script(
-            """
-            arguments[0].dispatchEvent(
-                new Event('change', { bubbles: true })
-            );
-            """,
-            quantity_input
+        # Click Update Shopping Cart.
+        update_buttons = driver.find_elements(
+            By.CSS_SELECTOR,
+            "button[name='updatecart']"
         )
 
-        # Wait for expected value
-        wait.until(
-            EC.text_to_be_present_in_element_value(
+        if update_buttons:
+            click_when_ready(
+                driver,
                 (
                     By.CSS_SELECTOR,
-                    "input.cart_quantity_input"
-                ),
-                str(quantity)
+                    "button[name='updatecart']"
+                )
+            )
+
+        # Wait until quantity is updated.
+        WebDriverWait(driver, WAIT).until(
+            lambda d: (
+                d.find_element(
+                    By.CSS_SELECTOR,
+                    ".qty-input"
+                ).get_attribute("value")
+                == str(quantity)
             )
         )
 
-        updated_quantity = quantity_input.get_attribute(
-            "value"
+        updated_quantity = driver.find_element(
+            By.CSS_SELECTOR,
+            ".qty-input"
+        ).get_attribute("value")
+
+        assert updated_quantity == str(quantity)
+
+        print(
+            f"\nCart quantity updated to: "
+            f"{updated_quantity}"
         )
 
-        assert updated_quantity == str(quantity), (
-            f"Expected quantity {quantity}, "
-            f"but found {updated_quantity}"
-        )
-
-        take_screenshot(
+        save_screenshot(
             driver,
-            "07_quantity_updated"
+            "09_quantity_updated"
         )
 
-        # ---------------------------------------------------------
-        # 10. VERIFY PRICE AND TOTAL
-        # ---------------------------------------------------------
+        # =========================================================
+        # 11. VERIFY PRICE AND TOTAL
+        # =========================================================
 
-        price_elements = driver.find_elements(
-            By.CSS_SELECTOR,
-            ".cart_price"
-        )
+        unit_price = wait_for(
+            driver,
+            (
+                By.CSS_SELECTOR,
+                ".product-unit-price"
+            )
+        ).text
 
-        total_elements = driver.find_elements(
-            By.CSS_SELECTOR,
-            ".cart_total"
-        )
-
-        assert len(price_elements) > 0, (
-            "Product price was not displayed"
-        )
-
-        assert len(total_elements) > 0, (
-            "Product total was not displayed"
-        )
+        line_total = wait_for(
+            driver,
+            (
+                By.CSS_SELECTOR,
+                ".product-subtotal"
+            )
+        ).text
 
         print(
             "\n========== CART DETAILS =========="
         )
         print(
-            f"Product quantity : {updated_quantity}"
+            f"Product  : {product_name}"
         )
         print(
-            f"Product price    : {price_elements[0].text}"
+            f"Quantity : {updated_quantity}"
         )
         print(
-            f"Product total    : {total_elements[0].text}"
+            f"Price    : {unit_price}"
+        )
+        print(
+            f"Subtotal : {line_total}"
         )
         print(
             "=================================="
         )
 
-        take_screenshot(
+        assert unit_price
+        assert line_total
+
+        save_screenshot(
             driver,
-            "08_cart_verified"
+            "10_cart_verified"
         )
 
-        # ---------------------------------------------------------
-        # 11. LOGOUT
-        # ---------------------------------------------------------
+        # =========================================================
+        # 12. LOGOUT
+        # =========================================================
 
         click_when_ready(
             driver,
@@ -555,20 +575,22 @@ class TestEcommerceCapstone:
             )
         )
 
-        wait.until(
+        WebDriverWait(driver, WAIT).until(
             EC.url_contains("/login")
         )
 
         assert "/login" in driver.current_url
 
-        take_screenshot(
+        save_screenshot(
             driver,
-            "09_logout"
+            "11_logout"
+
         )
+
 
     def test_price_in_rupees(self):
         """
-        Independent currency conversion test.
+        Simple currency conversion validation.
         """
 
         usd_to_inr = 88.0
