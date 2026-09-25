@@ -1,0 +1,65 @@
+name: Selenium E-Commerce Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:   # allows manual trigger from GitHub UI
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Check out the code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Python
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: selenium_ecommerce_capstone/requirements.txt
+
+      # 3. Install dependencies
+      - name: Install dependencies
+        run: pip install -r selenium_ecommerce_capstone/requirements.txt
+
+      # 4. Install Google Chrome (latest stable)
+      - name: Install Google Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      # 5. Run tests in headless mode
+      #    HEADLESS=true makes conftest.py pass --headless=new to ChromeOptions
+      - name: Run Selenium tests (headless)
+        env:
+          HEADLESS: "true"
+        run: |
+          cd selenium_ecommerce_capstone
+          pytest -v --tb=short \
+            --html=reports/execution_report.html \
+            --self-contained-html
+
+      # 6. Upload the HTML report as a downloadable artifact
+      - name: Upload test report
+        if: always()   # upload even when tests fail
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: selenium_ecommerce_capstone/reports/execution_report.html
+          retention-days: 30
+
+      # 7. Upload screenshots (especially failure screenshots)
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: selenium_ecommerce_capstone/screenshots/
+          retention-days: 30
+          if-no-files-found: ignore
