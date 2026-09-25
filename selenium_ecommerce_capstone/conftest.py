@@ -1,4 +1,3 @@
-```python
 """
 conftest.py
 -----------
@@ -9,6 +8,7 @@ Shared pytest fixtures:
 """
 
 import os
+
 import pytest
 from selenium import webdriver
 
@@ -20,6 +20,7 @@ HEADLESS = os.getenv("HEADLESS", "false").lower() == "true"
 
 @pytest.fixture(scope="class")
 def driver(request):
+    """Create and manage a Chrome WebDriver for the test class."""
 
     options = webdriver.ChromeOptions()
 
@@ -27,7 +28,6 @@ def driver(request):
     options.add_argument("--disable-infobars")
     options.add_argument("--window-size=1920,1080")
 
-    # GitHub Actions / CI
     if HEADLESS:
         options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
@@ -35,9 +35,11 @@ def driver(request):
 
     chrome_driver = webdriver.Chrome(options=options)
 
+    # Use explicit waits in the tests.
     chrome_driver.implicitly_wait(0)
 
-    # Make driver available as self.driver
+    # Make the driver available as self.driver
+    # inside the test class.
     request.cls.driver = chrome_driver
 
     yield chrome_driver
@@ -47,9 +49,7 @@ def driver(request):
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
-    """
-    Automatically capture a screenshot when a test fails.
-    """
+    """Take a screenshot automatically when a test fails."""
 
     outcome = yield
     report = outcome.get_result()
@@ -73,5 +73,4 @@ def pytest_runtest_makereport(item, call):
                 f"\n[Screenshot on failure saved] "
                 f"{screenshot_path}"
             )
-```
 
